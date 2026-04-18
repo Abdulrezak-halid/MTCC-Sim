@@ -157,3 +157,38 @@ The generated JSON file includes:
 - `scenarios`: full simulation output for each scenario
 - `comparison`: compact KPI table for cross-scenario analysis
 - `meta`: run metadata including seed and engine version
+
+### Milestone 2 API (FastAPI)
+
+Start API server:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+Available endpoints:
+
+- `POST /run-simulation`
+  - Runs one or more scenarios and optionally exports result JSON.
+- `GET /compare-scenarios`
+  - Returns the exported comparison payload directly.
+- `GET /get-metrics`
+  - Returns aggregate KPI metrics for all scenarios or one specific scenario.
+- `GET /health`
+  - Health check endpoint.
+
+Example requests:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/run-simulation" \
+  -H "Content-Type: application/json" \
+  -d '{"scenario":"all","seed":42,"replications":10}'
+```
+
+```bash
+curl "http://127.0.0.1:8000/compare-scenarios"
+```
+
+```bash
+curl "http://127.0.0.1:8000/get-metrics?scenario_id=normal_load"
+```
