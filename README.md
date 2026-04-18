@@ -34,6 +34,7 @@ Handles basic and common issues.
   - Account updates
 
 ✅ Possible Outcomes:
+
 - Issue resolved
 - Escalation to Tier 2
 
@@ -56,6 +57,7 @@ Handles more complex and technical issues.
   - Compatibility issues
 
 ✅ Possible Outcomes:
+
 - Issue resolved
 - Escalation to Tier 3 (critical cases)
 
@@ -77,6 +79,7 @@ Handles critical, system-level, or policy-related issues.
   - External system issues
 
 ✅ Possible Outcomes:
+
 - Issue resolved
 - Critical resolution
 
@@ -101,3 +104,56 @@ Handles critical, system-level, or policy-related issues.
 <p align="center" width="1536" height="1024">
   <img src="https://github.com/user-attachments/assets/dd09e3e4-26ce-4040-8581-73a38be1e06e" width="600"/>
 </p>
+This repository contains a probabilistic discrete-event simulation for a multi-tier call center.
+
+### Implemented Milestone 1
+
+- Stochastic call arrivals (Poisson process)
+- VIP and normal customer handling with priority queueing
+- Tier 1 and Tier 2 service flow with dynamic escalation logic
+- Call abandonment based on random patience
+- Monte Carlo replications for scenario comparison
+- JSON export with per-replication KPIs, aggregate KPIs, confidence intervals, and time series
+
+### Quick Start
+
+1. Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Run all predefined scenarios:
+
+```bash
+python simulation/run_simulation.py --scenario all --output simulation/results/latest_results.json
+```
+
+4. Run a single scenario with custom replication count:
+
+```bash
+python simulation/run_simulation.py --scenario peak_load --replications 20 --seed 42 --output simulation/results/peak.json
+```
+
+### Scenario IDs
+
+- `normal_load`
+- `peak_load`
+- `reduced_staff`
+- `increased_vip_ratio`
+- `improved_staff_efficiency`
+
+### Output
+
+The generated JSON file includes:
+
+- `scenarios`: full simulation output for each scenario
+- `comparison`: compact KPI table for cross-scenario analysis
+- `meta`: run metadata including seed and engine version
