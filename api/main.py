@@ -3,10 +3,13 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
@@ -20,9 +23,22 @@ from scenarios import scenario_catalog  # noqa: E402
 
 app = FastAPI(title="Call Center Simulation API", version="0.2.0")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 DEFAULT_RESULTS_PATH = ROOT_DIR / "simulation" / "results" / "latest_results.json"
 FALLBACK_RESULTS_PATH = ROOT_DIR / "simulation" / "simulation" / "results" / "latest_results.json"
 ENV_RESULTS_KEY = "CALLCENTER_RESULTS_PATH"
+HISTORY_DIR = ROOT_DIR / "simulation" / "results" / "runs"
+HISTORY_INDEX_PATH = ROOT_DIR / "simulation" / "results" / "runs_index.json"
 
 
 class RunSimulationRequest(BaseModel):
@@ -36,7 +52,67 @@ class RunSimulationRequest(BaseModel):
 class RunSimulationResponse(BaseModel):
     meta: dict[str, Any]
     comparison: list[dict[str, Any]]
+    run_id: str | None
     output_path: str | None
+
+
+class RunRecord(BaseModel):
+    run_id: str
+    generated_at: str
+    base_seed: int
+    scenario_count: int
+    scenario_ids: list[str]
+    output_path: str
+
+
+def _ensure_history_dir() -> None:
+    HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _build_run_id() -> str:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    return f"run-{timestamp}-{uuid4().hex[:8]}"
+
+
+def _load_history_index() -> list[dict[str, Any]]:
+    if not HISTORY_INDEX_PATH.exists():
+        return []
+
+    try:
+        data = json.loads(HISTORY_INDEX_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Invalid history index JSON: {exc}") from exc
+
+    if not isinstance(data, list):
+        raise HTTPException(status_code=500, detail="History index must contain a list of run records.")
+
+    return data
+
+
+def _save_history_index(records: list[dict[str, Any]]) -> None:
+    _ensure_history_dir()
+    HISTORY_INDEX_PATH.write_text(json.dumps(records, indent=2), encoding="utf-8")
+
+
+def _register_run(payload: dict[str, Any], output_path: Path, scenario_ids: list[str], base_seed: int) -> dict[str, Any]:
+    run_id = payload.get("meta", {}).get("run_id") or _build_run_id()
+    payload.setdefault("meta", {})
+    payload["meta"]["run_id"] = run_id
+
+    record = {
+        "run_id": run_id,
+        "generated_at": payload.get("meta", {}).get("generated_at", datetime.now(timezone.utc).isoformat()),
+        "base_seed": base_seed,
+        "scenario_count": len(scenario_ids),
+        "scenario_ids": scenario_ids,
+        "output_path": str(output_path),
+    }
+
+    records = _load_history_index()
+    records = [existing for existing in records if existing.get("run_id") != run_id]
+    records.insert(0, record)
+    _save_history_index(records)
+    return record
 
 
 def _normalize_scenarios(scenario_input: str | list[str]) -> list[str]:
@@ -112,13 +188,21 @@ def run_simulation(request: RunSimulationRequest) -> RunSimulationResponse:
     )
 
     output_path: str | None = None
+    run_id: str | None = None
     if request.save_output:
-        resolved_output = _resolve_results_path(request.output_path)
+        _ensure_history_dir()
+        run_id = _build_run_id()
+        payload.setdefault("meta", {})
+        payload["meta"]["run_id"] = run_id
+
+        resolved_output = _resolve_results_path(request.output_path) if request.output_path else (HISTORY_DIR / f"{run_id}.json")
         resolved_output.parent.mkdir(parents=True, exist_ok=True)
         resolved_output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         output_path = str(resolved_output)
 
-    return RunSimulationResponse(meta=payload["meta"], comparison=payload["comparison"], output_path=output_path)
+        _register_run(payload=payload, output_path=resolved_output, scenario_ids=scenario_ids, base_seed=request.seed)
+
+    return RunSimulationResponse(meta=payload["meta"], comparison=payload["comparison"], run_id=run_id, output_path=output_path)
 
 
 @app.get("/compare-scenarios")
@@ -169,3 +253,33 @@ def get_metrics(
         "replication_count": len(scenario.get("replications", [])),
         "source_path": str(source_path),
     }
+
+
+@app.get("/runs", response_model=list[RunRecord])
+def list_runs(limit: int | None = Query(default=None, ge=1)) -> list[RunRecord]:
+    if not isinstance(limit, int):
+        limit = None
+
+    records = [RunRecord(**record) for record in _load_history_index()]
+    if limit is not None:
+        return records[:limit]
+    return records
+
+
+@app.get("/runs/{run_id}")
+def get_run(run_id: str) -> dict[str, Any]:
+    history = _load_history_index()
+    record = next((entry for entry in history if entry.get("run_id") == run_id), None)
+    if record is None:
+        raise HTTPException(status_code=404, detail=f"Run '{run_id}' not found.")
+
+    output_path = Path(record["output_path"])
+    if not output_path.exists():
+        raise HTTPException(status_code=404, detail=f"Run output file missing at '{output_path}'.")
+
+    try:
+        payload = json.loads(output_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail=f"Invalid run JSON: {exc}") from exc
+
+    return {"record": record, "payload": payload}

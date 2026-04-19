@@ -1,0 +1,147 @@
+openapi: 3.1.0
+info:
+  title: Call Center Simulation API
+  version: 0.2.0
+  description: API for running the call center simulation, reading exported comparison payloads, and browsing historical runs.
+servers:
+  - url: http://127.0.0.1:8000
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: Service is healthy
+  /run-simulation:
+    post:
+      summary: Run one or more scenarios
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RunSimulationRequest"
+      responses:
+        "200":
+          description: Simulation run completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RunSimulationResponse"
+  /compare-scenarios:
+    get:
+      summary: Read the latest exported comparison payload
+      parameters:
+        - in: query
+          name: results_path
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Comparison payload
+  /get-metrics:
+    get:
+      summary: Read aggregate metrics from exported simulation results
+      parameters:
+        - in: query
+          name: scenario_id
+          schema:
+            type: string
+          required: false
+        - in: query
+          name: results_path
+          schema:
+            type: string
+          required: false
+      responses:
+        "200":
+          description: Metrics payload
+  /runs:
+    get:
+      summary: List historical runs
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+          required: false
+      responses:
+        "200":
+          description: Historical run list
+  /runs/{run_id}:
+    get:
+      summary: Fetch one historical run
+      parameters:
+        - in: path
+          name: run_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Historical run record and payload
+components:
+  schemas:
+    RunSimulationRequest:
+      type: object
+      properties:
+        scenario:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        seed:
+          type: integer
+          minimum: 0
+        replications:
+          type: integer
+          minimum: 1
+        output_path:
+          type: string
+        save_output:
+          type: boolean
+      required:
+        - scenario
+    RunSimulationResponse:
+      type: object
+      properties:
+        meta:
+          type: object
+        comparison:
+          type: array
+          items:
+            type: object
+        run_id:
+          type: [string, "null"]
+        output_path:
+          type: [string, "null"]
+      required:
+        - meta
+        - comparison
+    RunRecord:
+      type: object
+      properties:
+        run_id:
+          type: string
+        generated_at:
+          type: string
+        base_seed:
+          type: integer
+        scenario_count:
+          type: integer
+        scenario_ids:
+          type: array
+          items:
+            type: string
+        output_path:
+          type: string
+      required:
+        - run_id
+        - generated_at
+        - base_seed
+        - scenario_count
+        - scenario_ids
+        - output_path

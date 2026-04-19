@@ -174,6 +174,10 @@ Available endpoints:
   - Returns the exported comparison payload directly.
 - `GET /get-metrics`
   - Returns aggregate KPI metrics for all scenarios or one specific scenario.
+- `GET /runs`
+  - Lists historical saved simulation runs.
+- `GET /runs/{run_id}`
+  - Fetches one historical run and its stored payload.
 - `GET /health`
   - Health check endpoint.
 
@@ -192,3 +196,81 @@ curl "http://127.0.0.1:8000/compare-scenarios"
 ```bash
 curl "http://127.0.0.1:8000/get-metrics?scenario_id=normal_load"
 ```
+
+### Contracts
+
+The API and exported result shapes are defined in:
+
+- `contracts/simulation-output.schema.json`
+- `contracts/api.openapi.yaml`
+
+### Milestone 3 Frontend Scaffold
+
+A React + TypeScript dashboard scaffold lives in `dashboard/` and is wired to the API contract.
+
+It currently shows:
+
+- scenario comparison bars
+- historical run list
+- KPI snapshot cards
+- API connection state
+
+### How To Run Everything
+
+1. Create and activate the Python environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+2. Install Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Generate simulation data:
+
+```bash
+python simulation/run_simulation.py --scenario all --output simulation/results/latest_results.json
+```
+
+4. Start the API:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+5. Install dashboard dependencies:
+
+```bash
+cd dashboard
+npm install
+```
+
+6. Start the dashboard:
+
+```bash
+npm run dev
+```
+
+7. Open the dashboard in the browser:
+
+```text
+http://127.0.0.1:5173
+```
+
+### Dashboard Data Flow
+
+- The dashboard reads scenario comparison data from `GET /compare-scenarios`.
+- The dashboard reads historical runs from `GET /runs`.
+- The dashboard loads one run payload through `GET /runs/{run_id}`.
+
+### Tests
+
+Basic coverage exists for:
+
+- API history persistence
+- historical run lookup
+- schema validation of the exported simulation JSON
