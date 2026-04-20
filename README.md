@@ -28,14 +28,14 @@ A probabilistic discrete-event simulation of a multi-tier support center with:
 - improved_efficiency
 
 ## API Endpoints
-
-- POST /run-simulation
-- GET /compare-scenarios
-- GET /get-metrics
-- GET /runs
-- GET /runs/{run_id}
-- GET /health
-
+```
+POST /run-simulation
+GET /compare-scenarios
+GET /get-metrics
+GET /runs
+GET /runs/{run_id}
+GET /health
+```
 ## Documentation
 
 - Project structure and file purpose: [doc/project-structure.md](doc/project-structure.md)
