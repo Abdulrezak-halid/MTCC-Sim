@@ -30,11 +30,11 @@ A probabilistic discrete-event simulation of a multi-tier support center with:
 ## API Endpoints
 ```
 POST /run-simulation
-GET /compare-scenarios
-GET /get-metrics
-GET /runs
-GET /runs/{run_id}
-GET /health
+GET  /compare-scenarios
+GET  /get-metrics
+GET  /runs
+GET  /runs/{run_id}
+GET  /health
 ```
 ## Documentation
 
