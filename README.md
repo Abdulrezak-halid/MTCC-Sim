@@ -53,5 +53,5 @@ Run API persistence and schema tests:
 
 ```bash
 source .venv/bin/activate
-python -m unittest discover -s tests
+python3 -m unittest discover -s tests
 ```
