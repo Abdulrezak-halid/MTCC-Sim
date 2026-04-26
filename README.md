@@ -50,7 +50,6 @@ Quick browser access:
 - Full run steps (data + simulation + API + UI): [assets/doc/run-steps.md](assets/doc/run-steps.md)
 - Status snapshot: [assets/doc/status-summary.md](assets/doc/status-summary.md)
 - UI presentation Q&A: [assets/doc/ui-presentation-guide.md](assets/doc/ui-presentation-guide.md)
-- Final report (PDF): [assets/doc/ABDALRAZAK_KHALED_22430070907_FINAL_RAPORU.pdf](assets/doc/ABDALRAZAK_KHALED_22430070907_FINAL_RAPORU.pdf)
 
 ## Contracts
 
