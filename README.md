@@ -28,6 +28,7 @@ A probabilistic discrete-event simulation of a multi-tier support center with:
 - improved_efficiency
 
 ## API Endpoints
+
 ```
 POST /run-simulation
 GET  /compare-scenarios
@@ -36,11 +37,20 @@ GET  /runs
 GET  /runs/{run_id}
 GET  /health
 ```
+
+Quick browser access:
+
+- Swagger UI: http://127.0.0.1:8000/docs
+- ReDoc: http://127.0.0.1:8000/redoc
+- Health: http://127.0.0.1:8000/health
+
 ## Documentation
 
-- Project structure and file purpose: [doc/project-structure.md](doc/project-structure.md)
-- Full run steps (data + simulation + API + UI): [doc/run-steps.md](doc/run-steps.md)
-- Status snapshot: [doc/status-summary.md](doc/status-summary.md)
+- Project structure and file purpose: [assets/doc/project-structure.md](assets/doc/project-structure.md)
+- Full run steps (data + simulation + API + UI): [assets/doc/run-steps.md](assets/doc/run-steps.md)
+- Status snapshot: [assets/doc/status-summary.md](assets/doc/status-summary.md)
+- UI presentation Q&A: [assets/doc/ui-presentation-guide.md](assets/doc/ui-presentation-guide.md)
+- Final report (PDF): [assets/doc/ABDALRAZAK_KHALED_22430070907_FINAL_RAPORU.pdf](assets/doc/ABDALRAZAK_KHALED_22430070907_FINAL_RAPORU.pdf)
 
 ## Contracts
 
