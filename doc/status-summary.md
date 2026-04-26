@@ -1,5 +1,4 @@
 # Project Status Summary
-> *19.04.2026*
 
 This file summarizes the current state of the project, what each main file does, and what we are working on right now.
 
