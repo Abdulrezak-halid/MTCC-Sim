@@ -101,6 +101,11 @@ label span {
   color: var(--muted);
 }
 
+label span {
+  color: #eaf2ff;
+  font-weight: 600;
+}
+
 .hero-card-value {
   margin: 10px 0;
   font-size: 1.05rem;
@@ -115,17 +120,36 @@ label span {
 
 .grid {
   display: grid;
-  grid-template-columns: 1.25fr 0.75fr;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: 20px;
 }
 
 .panel {
+  position: relative;
+  overflow: hidden;
   border-radius: 24px;
   padding: 20px;
+  height: 100%;
 }
 
-.panel-wide {
-  grid-column: span 2;
+.panel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(125, 211, 252, 0.95), rgba(249, 115, 22, 0.75));
+}
+
+.panel-comparison,
+.panel-kpi {
+  grid-column: span 12;
+}
+
+.panel-history,
+.panel-controls {
+  grid-column: span 6;
 }
 
 .panel-header {
@@ -160,11 +184,15 @@ label span {
   display: block;
   margin-top: 10px;
   font-size: 1.45rem;
+  color: #ffffff;
 }
 
 .run-list {
   display: grid;
   gap: 12px;
+  max-height: 380px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .run-item {
@@ -199,10 +227,26 @@ select,
 input {
   width: 100%;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
+  border: 1px solid rgba(125, 211, 252, 0.52);
+  background: rgba(10, 19, 36, 0.92);
+  color: #ffffff;
   padding: 12px 14px;
+}
+
+select {
+  appearance: none;
+}
+
+select option {
+  background: #0b1528;
+  color: #ffffff;
+}
+
+select:focus,
+input:focus {
+  outline: none;
+  border-color: rgba(125, 211, 252, 0.9);
+  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.22);
 }
 
 @media (max-width: 960px) {
@@ -211,7 +255,10 @@ input {
     grid-template-columns: 1fr;
   }
 
-  .panel-wide {
+  .panel-comparison,
+  .panel-kpi,
+  .panel-history,
+  .panel-controls {
     grid-column: span 1;
   }
 

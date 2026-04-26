@@ -10,9 +10,47 @@ import {
   YAxis,
 } from "recharts";
 import { useDashboardStore } from "./store/useDashboardStore";
-import type { HistoricalRunPayload } from "./types";
+import type { HistoricalRunPayload, RunRecord } from "./types";
 
-const kpiTone = ["#f97316", "#14b8a6", "#84cc16", "#e879f9"];
+const scenarioPalette = [
+  "#22d3ee",
+  "#f97316",
+  "#a3e635",
+  "#f43f5e",
+  "#facc15",
+  "#8b5cf6",
+  "#14b8a6",
+  "#38bdf8",
+];
+
+function formatDateTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  }).format(date);
+}
+
+function formatRunLabel(run: RunRecord) {
+  return `${formatDateTime(run.generated_at)} UTC · ${run.scenario_count} scenarios · seed ${run.base_seed}`;
+}
+
+function formatRunShortId(runId: string) {
+  const match = runId.match(/^run-(\d{8}T\d{6})\d*Z-([a-z0-9]+)$/i);
+  if (!match) {
+    return runId;
+  }
+  return `run-${match[1]}-${match[2]}`;
+}
 
 function formatPercent(value: number) {
   return `${(value * 100).toFixed(1)}%`;
@@ -60,18 +98,18 @@ export default function App() {
         <div className="hero-card">
           <div className="hero-card-title">Current run</div>
           <div className="hero-card-value">
-            {activeRun?.record.run_id ?? "No run selected"}
+            {activeRun ? formatRunLabel(activeRun.record) : "No run selected"}
           </div>
           <div className="hero-card-subtitle">
             {activeRun
-              ? `${activeRun.record.scenario_count} scenarios · seed ${activeRun.record.base_seed}`
+              ? `ID: ${formatRunShortId(activeRun.record.run_id)}`
               : "Load a run to inspect metrics"}
           </div>
         </div>
       </header>
 
       <main className="grid">
-        <section className="panel panel-wide">
+        <section className="panel panel-comparison">
           <div className="panel-header">
             <h2>Scenario comparison</h2>
             <span>{comparison.length} scenarios</span>
@@ -96,12 +134,14 @@ export default function App() {
                     background: "#10162d",
                     border: "1px solid rgba(255,255,255,0.12)",
                   }}
+                  labelStyle={{ color: "#ffffff" }}
+                  itemStyle={{ color: "#ffffff" }}
                 />
                 <Bar dataKey="avg_wait_seconds" radius={[10, 10, 0, 0]}>
                   {comparison.map((entry, index) => (
                     <Cell
                       key={entry.scenario_id}
-                      fill={kpiTone[index % kpiTone.length]}
+                      fill={scenarioPalette[index % scenarioPalette.length]}
                     />
                   ))}
                 </Bar>
@@ -110,7 +150,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="panel">
+        <section className="panel panel-history">
           <div className="panel-header">
             <h2>Historical runs</h2>
             <span>{runs.length} saved</span>
@@ -125,14 +165,44 @@ export default function App() {
                 }
                 onClick={() => void selectRun(run.run_id)}
               >
-                <strong>{run.run_id}</strong>
-                <span>{run.scenario_count} scenarios</span>
+                <strong>{formatDateTime(run.generated_at)} UTC</strong>
+                <span>
+                  {run.scenario_count} scenarios · seed {run.base_seed} ·{" "}
+                  {formatRunShortId(run.run_id)}
+                </span>
               </button>
             ))}
           </div>
         </section>
 
-        <section className="panel panel-wide">
+        <section className="panel panel-controls">
+          <div className="panel-header">
+            <h2>Current run controls</h2>
+            <span>{loading ? "Loading..." : "Ready"}</span>
+          </div>
+          <div className="control-stack">
+            <label>
+              <span>Active run</span>
+              <select
+                value={selectedRunId ?? ""}
+                onChange={(event) => void selectRun(event.target.value)}
+              >
+                {runs.map((run) => (
+                  <option key={run.run_id} value={run.run_id}>
+                    {formatDateTime(run.generated_at)} UTC · seed{" "}
+                    {run.base_seed}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>API status</span>
+              <input value={error ?? "Connected to API contract"} readOnly />
+            </label>
+          </div>
+        </section>
+
+        <section className="panel panel-kpi">
           <div className="panel-header">
             <h2>KPI snapshot</h2>
             <span>
@@ -143,7 +213,7 @@ export default function App() {
           </div>
           <div className="kpi-grid">
             <article className="kpi-card">
-              <span>Avg wait</span>
+              <span>Average wait (seconds)</span>
               <strong>
                 {typeof kpis.avg_wait_seconds === "number"
                   ? formatSeconds(kpis.avg_wait_seconds)
@@ -174,32 +244,6 @@ export default function App() {
                   : "—"}
               </strong>
             </article>
-          </div>
-        </section>
-
-        <section className="panel">
-          <div className="panel-header">
-            <h2>Current run controls</h2>
-            <span>{loading ? "Loading..." : "Ready"}</span>
-          </div>
-          <div className="control-stack">
-            <label>
-              <span>Active run</span>
-              <select
-                value={selectedRunId ?? ""}
-                onChange={(event) => void selectRun(event.target.value)}
-              >
-                {runs.map((run) => (
-                  <option key={run.run_id} value={run.run_id}>
-                    {run.run_id}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>API status</span>
-              <input value={error ?? "Connected to API contract"} readOnly />
-            </label>
           </div>
         </section>
       </main>
